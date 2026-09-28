@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 from dataclasses import dataclass
 from typing import Protocol
@@ -7,6 +8,9 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 
 from .config import Settings
+
+
+logger = logging.getLogger(__name__)
 
 
 class ScenePair(BaseModel):
@@ -49,7 +53,7 @@ class OpenAICompatibleSceneGenerator:
 不要写任何歌词、完整歌名、歌手名、现实私人信息、侮辱、露骨性内容或违法内容。
 只输出符合 JSON Schema 的对象。"""
         last_error: Exception | None = None
-        for _ in range(2):
+        for attempt in range(1, 3):
             try:
                 response = client.chat.completions.create(
                     model=self.settings.openai_model,
@@ -61,4 +65,10 @@ class OpenAICompatibleSceneGenerator:
                 return ScenePair.model_validate(json.loads(content))
             except Exception as exc:  # API and schema failures are both safe to retry once.
                 last_error = exc
+                logger.exception(
+                    "Scene generation failed (attempt %s/2, model=%s, topic_provided=%s)",
+                    attempt,
+                    self.settings.openai_model,
+                    bool(topic),
+                )
         raise SceneGenerationError("场景生成失败，请稍后重试。") from last_error

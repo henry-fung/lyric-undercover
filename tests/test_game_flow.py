@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.config import Settings
 from app.models import Player, Room
-from app.scenes import ScenePair
+from app.scenes import OpenAICompatibleSceneGenerator, SceneGenerationError, ScenePair
 from main import create_app
 
 
@@ -100,3 +100,29 @@ def test_websocket_broadcasts_public_room_change(tmp_path):
             guest = TestClient(app)
             guest.post(f"/rooms/{room_code}/join", data={"name": "听众", "invite_code": "party-code"})
             assert socket.receive_json() == {"event": "player_joined"}
+
+
+def test_scene_generator_logs_original_failures(monkeypatch, caplog):
+    class FailingCompletions:
+        def create(self, **kwargs):
+            raise TimeoutError("upstream timed out")
+
+    class FailingClient:
+        class Chat:
+            completions = FailingCompletions()
+
+        chat = Chat()
+
+    monkeypatch.setattr("app.scenes.OpenAI", lambda **kwargs: FailingClient())
+    generator = OpenAICompatibleSceneGenerator(Settings(openai_api_key="test", openai_model="test-model"))
+
+    with caplog.at_level("ERROR", logger="app.scenes"):
+        try:
+            generator.generate(None, [])
+        except SceneGenerationError:
+            pass
+        else:
+            raise AssertionError("Expected scene generation to fail")
+
+    assert caplog.text.count("Scene generation failed") == 2
+    assert "upstream timed out" in caplog.text
