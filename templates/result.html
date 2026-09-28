@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="hero compact"><p class="eyebrow">房间 {{ room.code }} · 最终结算</p><h1>{% if room.winner == 'civilian' %}平民获胜{% else %}卧底获胜{% endif %}</h1></section>
+<section class="hero compact"><p class="eyebrow">房间 {{ room.code }} · 第 {{ game.number }} 局结算</p><h1>{% if game.winner == 'civilian' %}平民获胜{% else %}卧底获胜{% endif %}</h1></section>
 <section class="card"><h2>身份公开</h2><div class="people">{% for player in players %}<span class="person {{ player.role }}">{{ player.name }} · {% if player.role == 'undercover' %}卧底{% else %}平民{% endif %}{% if player.id in eliminated %} · 已出局{% endif %}</span>{% endfor %}</div></section>
 <section class="card"><h2>本局场景</h2>{% for round in rounds %}<article class="round"><p class="eyebrow">第 {{ round.number }} 轮 · {{ round.theme }}</p><p><strong>平民：</strong>{{ round.civilian_prompt }}</p><p><strong>卧底：</strong>{{ round.undercover_prompt }}</p></article>{% endfor %}</section>
+{% if history|length > 1 %}<section class="card"><h2>历史结算</h2>{% for item in history %}<a class="button-link {% if item.id == game.id %}secondary{% endif %}" href="/rooms/{{ room.code }}/result/{{ item.number }}">第 {{ item.number }} 局 · {% if item.winner == 'civilian' %}平民获胜{% else %}卧底获胜{% endif %}</a>{% endfor %}</section>{% endif %}
 {% endblock %}

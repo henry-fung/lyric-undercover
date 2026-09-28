@@ -5,16 +5,16 @@
 {% endif %}
 <section class="room-header"><div><p class="eyebrow">房间 {{ room.code }}</p><h1>你好，{{ player.name }}</h1></div>{% if is_host %}<a class="button-link secondary" href="/rooms/{{ room.code }}/host">房主管理</a>{% endif %}</section>
 {% if room.state == 'lobby' %}
-<section class="card center"><h2>等待房主开始</h2><p>玩家到齐后，房主会设置卧底人数并生成第一轮场景。</p></section>
+<section class="card center"><h2>等待房主开始</h2><p>玩家到齐后，房主会设置卧底人数并生成第一轮场景。</p>{% if history %}<a class="button-link secondary" href="/rooms/{{ room.code }}/result">查看上一局结算</a>{% endif %}</section>
 {% elif room.state == 'finished' %}
 <section class="card center"><h2>本局已结束</h2><p>身份和全部场景现在可以公开了。</p><a class="button-link" href="/rooms/{{ room.code }}/result">查看结算</a></section>
-{% elif not player.is_alive %}
+{% elif not participant.is_alive %}
 <section class="card center"><p class="eyebrow">本轮已出局</p><h2>感谢你的演唱</h2><p>请等待本局结算，届时会公开全部身份。</p></section>
 {% elif round and not round.closed_at %}
-<section class="card prompt {{ player.role }}">
+<section class="card prompt {{ participant.role }}">
   <p class="eyebrow">第 {{ round.number }} 轮 · 请勿给旁人看</p>
-  <p class="role">{% if player.role == 'undercover' %}卧底{% else %}平民{% endif %}</p>
-  <h2>{% if player.role == 'undercover' %}{{ round.undercover_prompt }}{% else %}{{ round.civilian_prompt }}{% endif %}</h2>
+  <p class="role">{% if participant.role == 'undercover' %}卧底{% else %}平民{% endif %}</p>
+  <h2>{% if participant.role == 'undercover' %}{{ round.undercover_prompt }}{% else %}{{ round.civilian_prompt }}{% endif %}</h2>
   <p class="muted">想一首契合场景的歌，线下演唱或描述你的选择。系统不会记录歌词。</p>
 </section>
 {% else %}

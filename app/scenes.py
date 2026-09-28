@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .config import Settings
 
@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class ScenePair(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     civilian_prompt: str = Field(min_length=8, max_length=140)
     undercover_prompt: str = Field(min_length=8, max_length=140)
     summary: str = Field(min_length=3, max_length=80)
@@ -52,12 +54,22 @@ class OpenAICompatibleSceneGenerator:
 平民题必须比卧底题多出一个自然、关键且不直接点破答案的具体情境信息；两题必须指向同一大意。
 不要写任何歌词、完整歌名、歌手名、现实私人信息、侮辱、露骨性内容或违法内容。
 只输出符合 JSON Schema 的对象。"""
+        output_contract = """
+Return exactly one JSON object. Do not use Markdown or code fences. Its required keys are:
+{
+  "civilian_prompt": "a Chinese scene prompt, 8-140 characters",
+  "undercover_prompt": "a Chinese scene prompt, 8-140 characters",
+  "summary": "a Chinese summary, 3-80 characters"
+}
+Never use the keys "civilian", "undercover", "prompt", "title", or "theme" in place of these keys.
+"""
         last_error: Exception | None = None
+        repair_instruction = ""
         for attempt in range(1, 3):
             try:
                 response = client.chat.completions.create(
                     model=self.settings.openai_model,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[{"role": "user", "content": prompt + output_contract + repair_instruction}],
                     temperature=self.settings.openai_temperature,
                     response_format={"type": "json_object"},
                 )
@@ -71,4 +83,11 @@ class OpenAICompatibleSceneGenerator:
                     self.settings.openai_model,
                     bool(topic),
                 )
+                if isinstance(exc, (json.JSONDecodeError, ValueError)):
+                    repair_instruction = (
+                        "\nYour previous response did not satisfy the required JSON schema. "
+                        f"Validation error: {exc}. Return a corrected object using all three exact keys only."
+                    )
+                elif getattr(exc, "status_code", None) in {400, 401, 403, 404, 422}:
+                    break
         raise SceneGenerationError("场景生成失败，请稍后重试。") from last_error

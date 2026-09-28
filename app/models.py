@@ -38,11 +38,40 @@ class Player(Base):
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
-class GameRound(Base):
-    __tablename__ = "rounds"
+class Game(Base):
+    """One completed or in-progress game played in a room."""
+
+    __tablename__ = "games"
+    __table_args__ = (UniqueConstraint("room_id", "number", name="uq_game_number_per_room"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), index=True)
+    number: Mapped[int] = mapped_column(Integer)
+    winner: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class GamePlayer(Base):
+    """A player's immutable-in-membership snapshot for a particular game."""
+
+    __tablename__ = "game_players"
+    __table_args__ = (UniqueConstraint("game_id", "player_id", name="uq_game_player"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), index=True)
+    role: Mapped[str] = mapped_column(String(16))
+    is_alive: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class GameRound(Base):
+    __tablename__ = "rounds"
+    __table_args__ = (UniqueConstraint("game_id", "number", name="uq_round_number_per_game"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), index=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True)
     number: Mapped[int] = mapped_column(Integer)
     theme: Mapped[str] = mapped_column(String(80))
     civilian_prompt: Mapped[str] = mapped_column(Text)
@@ -53,9 +82,11 @@ class GameRound(Base):
 
 class Elimination(Base):
     __tablename__ = "eliminations"
+    __table_args__ = (UniqueConstraint("game_id", "player_id", name="uq_elimination_player_per_game"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), index=True)
+    game_id: Mapped[int] = mapped_column(ForeignKey("games.id"), index=True)
     round_id: Mapped[int] = mapped_column(ForeignKey("rounds.id"))
-    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), unique=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
