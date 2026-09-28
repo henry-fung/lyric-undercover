@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+{% if recovery_code %}
+<section class="notice recovery"><strong>保存你的恢复码：{{ recovery_code }}</strong><br>它只显示这一次。换设备时需用“房间号 + 姓名 + 恢复码”取回身份。</section>
+{% endif %}
+<section class="room-header"><div><p class="eyebrow">房间 {{ room.code }}</p><h1>你好，{{ player.name }}</h1></div>{% if is_host %}<a class="button-link secondary" href="/rooms/{{ room.code }}/host">房主管理</a>{% endif %}</section>
+{% if room.state == 'lobby' %}
+<section class="card center"><h2>等待房主开始</h2><p>玩家到齐后，房主会设置卧底人数并生成第一轮场景。</p></section>
+{% elif room.state == 'finished' %}
+<section class="card center"><h2>本局已结束</h2><p>身份和全部场景现在可以公开了。</p><a class="button-link" href="/rooms/{{ room.code }}/result">查看结算</a></section>
+{% elif not player.is_alive %}
+<section class="card center"><p class="eyebrow">本轮已出局</p><h2>感谢你的演唱</h2><p>请等待本局结算，届时会公开全部身份。</p></section>
+{% elif round and not round.closed_at %}
+<section class="card prompt {{ player.role }}">
+  <p class="eyebrow">第 {{ round.number }} 轮 · 请勿给旁人看</p>
+  <p class="role">{% if player.role == 'undercover' %}卧底{% else %}平民{% endif %}</p>
+  <h2>{% if player.role == 'undercover' %}{{ round.undercover_prompt }}{% else %}{{ round.civilian_prompt }}{% endif %}</h2>
+  <p class="muted">想一首契合场景的歌，线下演唱或描述你的选择。系统不会记录歌词。</p>
+</section>
+{% else %}
+<section class="card center"><h2>线下投票中</h2><p>请等待房主记录淘汰结果，或开启下一轮。</p></section>
+{% endif %}
+<section class="card"><h2>在场玩家</h2><div class="people">{% for item in players %}<span class="person {% if not item.is_alive %}out{% endif %}">{{ item.name }}{% if not item.is_alive %} · 已出局{% endif %}</span>{% endfor %}</div></section>
+<script>
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/rooms/{{ room.code }}`);
+  ws.onmessage = () => location.reload();
+  setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 25000);
+</script>
+{% endblock %}

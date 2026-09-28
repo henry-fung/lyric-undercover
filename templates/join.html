@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero compact"><p class="eyebrow">房间 {{ room.code }}</p><h1>加入这场演唱会</h1></section>
+<section class="card grid-two">
+  <form method="post" action="/rooms/{{ room.code }}/join">
+    <h2>首次加入</h2>
+    <label>你的名字<input required maxlength="40" name="name" autocomplete="name"></label>
+    <label>邀请码<input required name="invite_code" type="password" autocomplete="off"></label>
+    <button>加入房间</button>
+  </form>
+  <form method="post" action="/rooms/{{ room.code }}/recover">
+    <h2>恢复身份</h2><p class="muted">换设备或清除浏览器后使用。</p>
+    <label>你的名字<input required maxlength="40" name="name"></label>
+    <label>恢复码<input required name="recovery_code" autocomplete="off" style="text-transform:uppercase"></label>
+    <button class="secondary">恢复身份</button>
+  </form>
+</section>
+{% endblock %}

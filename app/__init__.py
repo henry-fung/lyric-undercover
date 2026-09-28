@@ -1,0 +1,1 @@
+"""Lyric Undercover application package."""

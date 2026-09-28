@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">线下聚会 · 手机私密发题</p>
+  <h1>唱出你的答案，<br>藏住你的身份。</h1>
+  <p>所有讨论和投票在线下完成。网页只会把你的题目，悄悄交给你。</p>
+</section>
+<section class="card grid-two">
+  <form method="post" action="/rooms">
+    <h2>创建房间</h2><p class="muted">成为房主，也可参与游戏。</p>
+    <label>你的名字<input required maxlength="40" name="name" autocomplete="name"></label>
+    <label>邀请码<input required name="invite_code" type="password" autocomplete="off"></label>
+    <button>创建新房间</button>
+  </form>
+  <form method="get" id="enter-form">
+    <h2>加入房间</h2><p class="muted">从房主处获得六位房间号。</p>
+    <label>房间号<input required maxlength="6" id="room-code" autocomplete="off" style="text-transform:uppercase"></label>
+    <button>进入房间</button>
+  </form>
+</section>
+<script>document.getElementById('enter-form').addEventListener('submit', e => { e.preventDefault(); location.href='/rooms/'+document.getElementById('room-code').value.trim().toUpperCase(); });</script>
+{% endblock %}

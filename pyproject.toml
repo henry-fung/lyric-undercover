@@ -1,0 +1,24 @@
+[project]
+name = "lyric-undercover"
+version = "0.1.0"
+description = "A lightweight offline lyric undercover party game"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "jinja2>=3.1,<4",
+    "openai>=2.0,<3",
+    "pydantic-settings>=2.6,<3",
+    "python-multipart>=0.0.12,<1",
+    "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[project.optional-dependencies]
+dev = ["httpx>=0.27,<1", "pytest>=8,<9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools]
+packages = ["app"]
